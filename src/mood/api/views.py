@@ -7,6 +7,10 @@ from mood.models import Mood
 from authentication.models import CustomUser, Profile
 from .serializers import MoodSerializer
 
+# testing only
+import datetime
+from django.utils.timezone import now
+
 
 class MoodView(generics.ListCreateAPIView):
     serializer_class = MoodSerializer

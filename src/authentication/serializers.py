@@ -56,4 +56,5 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ('user', 'first_name', 'last_name')
+        fields = ('user', 'first_name', 'last_name',
+                  'current_streak', 'longest_streak')
