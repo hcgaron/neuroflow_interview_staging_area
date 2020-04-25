@@ -8,6 +8,7 @@ from .models import CustomUser, Profile
 def create_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
+        print('creating new profile!')
         return
     try:
         instance.profile.save()
