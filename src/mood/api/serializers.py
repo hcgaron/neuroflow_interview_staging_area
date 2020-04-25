@@ -5,4 +5,5 @@ from mood.models import Mood
 class MoodSerializer(serializers.ModelSerializer):
     class Meta:
         model = Mood
-        fields = ('mood',)
+        fields = ('mood', )
+        read_only_fields = ('user',)
