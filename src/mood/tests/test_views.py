@@ -10,6 +10,7 @@ import datetime
 class MoodTestClass(TestCase):
 
     INITIAL_MOODS_PER_USER = 10
+    NUMBER_OF_USERS = 10
 
     # helper methods
     def log_in_user(self, user_number):
@@ -37,10 +38,9 @@ class MoodTestClass(TestCase):
     def setUp(self):
 
         # create 100 users
-        number_of_users = 10
         moods_per_user = self.INITIAL_MOODS_PER_USER
 
-        for user_id in range(number_of_users):
+        for user_id in range(self.NUMBER_OF_USERS):
             CustomUser.objects.create_user(
                 username=f'user{user_id}', email=f'email{user_id}', password=f'password{user_id}')
             # log user in
@@ -95,3 +95,17 @@ class MoodTestClass(TestCase):
         client = self.set_api_client_credentials(token_response)
         mood_response = client.get(reverse('moods'))
         self.assertEqual(mood_response.data['streak'], 1)
+
+    def test_streak_percentile(self):
+        user_number = 3
+        token_response = self.log_in_user(user_number)
+        client = self.set_api_client_credentials(token_response)
+
+        for user_num in range(self.NUMBER_OF_USERS):
+            profile = CustomUser.objects.get(
+                username=f'user{user_num}').profile
+            profile.current_streak = user_num
+            profile.save()
+        print(CustomUser.objects.get(
+            username=f'user{user_number}').profile.current_streak)
+        mood_response = client.get(reverse('moods'))

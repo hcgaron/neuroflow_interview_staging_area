@@ -1,6 +1,7 @@
 import numpy as np
 from django.db.models import F, Func, IntegerField, Avg
 from django.db.models.aggregates import Aggregate
+from django.db.models.expressions import RawSQL
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework.response import Response
@@ -20,13 +21,29 @@ class MoodView(generics.ListCreateAPIView):
     serializer_class = MoodSerializer
 
     def get_streak_percentile(self, request, *args):
-        # print('getting streak percentile')
-        # user_streak = request.user.profile.current_streak
-        # queryset = (
-        #     Profile.objects.all()
-        #     .annotate(streak_percentile=Avg('current_streak'))
-        # )
-        pass
+        """
+        Note that this implementation is specific to PostgreSQL
+        """
+        print('getting streak percentile')
+        user_streak = request.user.profile.current_streak
+
+        queryset = Profile.objects.annotate(streak_percentile=RawSQL("""
+                SELECT 
+                    PERCENT_RANK() OVER ( 
+                        ORDER BY current_streak 
+                    )
+                FROM authentication_profile
+                LIMIT 1
+            """, ()))
+
+        # print(len(queryset))
+        # user_percentile = queryset.get(user=request.user).streak_percentile
+        # print('streak percentile : ', user_percentile)
+        # print(queryset)
+        # print(len(queryset))
+        print("streak_percentile ", queryset.get(
+            user=request.user).streak_percentile)
+        # pass
 
     def get_queryset(self):
         """
