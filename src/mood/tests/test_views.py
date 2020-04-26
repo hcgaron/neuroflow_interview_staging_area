@@ -37,6 +37,13 @@ class MoodTestClass(TestCase):
             profile.current_streak = user_num
             profile.save()
 
+    def set_longest_streaks_manually(self):
+        for user_num in range(self.NUMBER_OF_USERS):
+            profile = CustomUser.objects.get(
+                username=f'user{user_num}').profile
+            profile.longest_streak = user_num
+            profile.save()
+
     # set up test data methods
     @classmethod
     def setUpTestData(cls):
@@ -103,16 +110,44 @@ class MoodTestClass(TestCase):
         mood_response = client.get(reverse('moods'))
         self.assertEqual(mood_response.data['streak'], 1)
 
-    def test_streak_percentile_not_added_if_percentile_lt_50pct(self):
+    def test_streak_percentile_added_if_percentile_gte_50pct(self):
         self.set_streaks_manually()
         for user_num in range(self.NUMBER_OF_USERS):
-            user_number = user_num
-            token_response = self.log_in_user(user_number)
+            token_response = self.log_in_user(user_num)
             client = self.set_api_client_credentials(token_response)
             mood_response = client.get(reverse('moods'))
+            print(f"user_num: {user_num} : ", mood_response.data.get(
+                'streak_percentile', None))
             if user_num >= self.NUMBER_OF_USERS / 2 - 1:
                 self.assertAlmostEqual(
-                    mood_response.data['streak_percentile'], (user_number + 1) * .1)
+                    mood_response.data['streak_percentile'], (user_num + 1) * .1)
             if user_num < self.NUMBER_OF_USERS / 2 - 1:
                 self.assertIsNone(mood_response.data.get(
                     'streak_percentile'), None)
+
+    def test_longest_streak_percentile_compared_to_current_streak(self):
+        """
+        Both the current_streak and longest_streak
+        are being set manually to the same value.
+        Percentile of current_streak should be same as
+        percentile of current_streak w.r.t. longest_streaks
+        """
+
+        self.set_streaks_manually()
+        self.set_longest_streaks_manually()
+
+        for user_num in range(self.NUMBER_OF_USERS):
+            token_response = self.log_in_user(user_num)
+            client = self.set_api_client_credentials(token_response)
+            mood_response = client.get(reverse('moods'))
+            self.assertAlmostEqual(
+                mood_response.data['longest_streak_percentile'], (user_num + 1) * .1)
+
+    def test_streak_increments_with_daily_mood_posts(self):
+        pass
+
+    def test_streak_does_not_increment_with_mood_post_on_same_day(self):
+        pass
+
+    def test_streak_resets_when_days_were_missed(self):
+        pass
