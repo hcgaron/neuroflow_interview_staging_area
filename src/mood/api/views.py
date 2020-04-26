@@ -22,28 +22,34 @@ class MoodView(generics.ListCreateAPIView):
 
     def get_streak_percentile(self, request, *args):
         """
-        Note that this implementation is specific to PostgreSQL
+        Note that this implementation makes use of built-in
+        database CUME_DIST functionality
         """
-        print('getting streak percentile')
-        user_streak = request.user.profile.current_streak
-
-        queryset = Profile.objects.annotate(streak_percentile=RawSQL("""
-                SELECT 
-                    PERCENT_RANK() OVER ( 
-                        ORDER BY current_streak 
-                    )
-                FROM authentication_profile
-                LIMIT 1
+        annotated_queryset = Profile.objects.annotate(streak_percentile=RawSQL("""
+                     CUME_DIST() OVER (
+                         ORDER BY current_streak
+                     )
             """, ()))
 
-        # print(len(queryset))
-        # user_percentile = queryset.get(user=request.user).streak_percentile
-        # print('streak percentile : ', user_percentile)
-        # print(queryset)
-        # print(len(queryset))
-        print("streak_percentile ", queryset.get(
-            user=request.user).streak_percentile)
-        # pass
+        # see notes on .iterator() optimization below
+        for user in annotated_queryset.iterator():
+            if user.user_id == request.user.pk:
+                user_streak_percentile = user.streak_percentile
+                # print(
+                #     f'user : {user}, current_streak : {user.current_streak},streak percentile: {user.streak_percentile}')
+                break
+
+        return user_streak_percentile
+
+        # old way of doing this (below) would be memory intensive for
+        # large querysets.  Using .iterator() lazily streams them from
+        # the database, but doesn't cache results.  Since results may
+        # change between queries, caching here wouldn't be ideal. Code
+        # below is for reference
+
+        # NOT MEMORY EFFICIENT CODE ::
+        # annotated_user_profile=list(
+        #     filter(lambda profile: profile.user_id == user_id, annotated_queryset))[0]
 
     def get_queryset(self):
         """
@@ -73,8 +79,11 @@ class MoodView(generics.ListCreateAPIView):
         queryset = self.get_queryset()
         serializer = MoodSerializer(queryset, many=True)
         response_list = serializer.data
+        response_dict = {'mood_list': response_list,
+                         'streak': request.user.profile.current_streak}
 
-        streak_precentile = self.get_streak_percentile(
+        streak_percentile = self.get_streak_percentile(
             request, *args, **kwargs)
-        # response_list.append({'streak': request.user.profile.current_streak})
-        return Response({'mood_list': response_list, 'streak': request.user.profile.current_streak})
+        if streak_percentile >= 0.5:
+            response_dict['streak_percentile'] = streak_percentile
+        return Response(response_dict)

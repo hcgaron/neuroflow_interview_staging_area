@@ -30,6 +30,13 @@ class MoodTestClass(TestCase):
         response = client.post(reverse('moods'), {"mood": f"{msg}"})
         return response
 
+    def set_streaks_manually(self):
+        for user_num in range(self.NUMBER_OF_USERS):
+            profile = CustomUser.objects.get(
+                username=f'user{user_num}').profile
+            profile.current_streak = user_num
+            profile.save()
+
     # set up test data methods
     @classmethod
     def setUpTestData(cls):
@@ -41,7 +48,7 @@ class MoodTestClass(TestCase):
         moods_per_user = self.INITIAL_MOODS_PER_USER
 
         for user_id in range(self.NUMBER_OF_USERS):
-            CustomUser.objects.create_user(
+            user = CustomUser.objects.create_user(
                 username=f'user{user_id}', email=f'email{user_id}', password=f'password{user_id}')
             # log user in
             token_response = self.log_in_user(user_id)
@@ -96,16 +103,16 @@ class MoodTestClass(TestCase):
         mood_response = client.get(reverse('moods'))
         self.assertEqual(mood_response.data['streak'], 1)
 
-    def test_streak_percentile(self):
-        user_number = 3
-        token_response = self.log_in_user(user_number)
-        client = self.set_api_client_credentials(token_response)
-
+    def test_streak_percentile_not_added_if_percentile_lt_50pct(self):
+        self.set_streaks_manually()
         for user_num in range(self.NUMBER_OF_USERS):
-            profile = CustomUser.objects.get(
-                username=f'user{user_num}').profile
-            profile.current_streak = user_num
-            profile.save()
-        print(CustomUser.objects.get(
-            username=f'user{user_number}').profile.current_streak)
-        mood_response = client.get(reverse('moods'))
+            user_number = user_num
+            token_response = self.log_in_user(user_number)
+            client = self.set_api_client_credentials(token_response)
+            mood_response = client.get(reverse('moods'))
+            if user_num >= self.NUMBER_OF_USERS / 2 - 1:
+                self.assertAlmostEqual(
+                    mood_response.data['streak_percentile'], (user_number + 1) * .1)
+            if user_num < self.NUMBER_OF_USERS / 2 - 1:
+                self.assertIsNone(mood_response.data.get(
+                    'streak_percentile'), None)
