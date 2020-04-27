@@ -88,7 +88,7 @@ So how to handle this more efficiently for large data sets?
 
 #### Percentile proposal for LARGE data set
 
-I would propose a nightly (or at least intervallic) recalculation of percentile buckets that can be cached and compared against users `streak`s. Using Postgres **`NTILE(100)`** would yield values for each percentile which could be cached until the next evaluation. User streaks could then be compared against the values for each bucket to determine their percentile.
+I would propose a nightly (or at least intervallic) recalculation of percentile buckets that can be cached and compared against users `streak`s. This could be scheduled with an asynchronous task scheduler like **celery**. Using Postgres **`NTILE(100)`** would yield values for each percentile which could be cached until the next evaluation. User streaks could then be compared against the values for each bucket to determine their percentile.
 
 #### Other LARGE data set considerations
 
@@ -101,3 +101,5 @@ Additionally, the client side architecture (for example **React**) could expect 
 I like using Django, Postgres, Apache, python, sklearn, TensorFlow & Keras (for machine learning), but these are all just tools and I'm open to other tech stacks. If I were tasked with taking on the full project myself I would probably use React for a browser based front-end and React Native for a cross-platform mobile app (to cut down on dev time for myself).
 
 I could see benefits to using Flask, especially due to Django's opacity which, at one point in this assessment, caused a bit of a headache (I had to manually inspect the Django SQL queries being generated).
+
+I would offload some of the expensive tasks (like intervallic calculation of percentiles) with an asynchronous task scheduler like celery & RabbitMQ. 
