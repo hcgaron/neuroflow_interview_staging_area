@@ -2,7 +2,9 @@ from django.urls import reverse
 from django.test import TestCase
 from django.utils.timezone import now
 from rest_framework.test import APIClient
+from mood.models import Mood
 from authentication.models import CustomUser
+from mood.api.serializers import MoodSerializer
 
 import datetime
 
@@ -51,7 +53,7 @@ class MoodTestClass(TestCase):
 
     def setUp(self):
 
-        # create 100 users
+        # create users
         moods_per_user = self.INITIAL_MOODS_PER_USER
 
         for user_id in range(self.NUMBER_OF_USERS):
@@ -143,11 +145,83 @@ class MoodTestClass(TestCase):
             self.assertAlmostEqual(
                 mood_response.data['longest_streak_percentile'], (user_num + 1) * .1)
 
-    def test_streak_increments_with_daily_mood_posts(self):
-        pass
-
     def test_streak_does_not_increment_with_mood_post_on_same_day(self):
         pass
 
     def test_streak_resets_when_days_were_missed(self):
         pass
+
+
+class StreakTestClass(TestCase):
+    """
+    Contains some tests related to streaks which require different setUp
+    than the MoodTestClass
+    """
+
+    INITIAL_MOODS_PER_USER = 10
+    NUMBER_OF_USERS = 10
+
+    # helper methods
+    def log_in_user(self, user_number):
+        token_response = self.client.post(reverse(
+            'token_create'),
+            {"username": f"user{user_number}",
+             "password": f"password{user_number}"})
+        return token_response
+
+    def set_api_client_credentials(self, token_response):
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION='Bearer ' +
+                           token_response.data['access'])
+        return client
+
+    def create_mood(self, client, msg):
+        response = client.post(reverse('moods'), {"mood": f"{msg}"})
+        return response
+
+    def set_streaks_manually(self):
+        for user_num in range(self.NUMBER_OF_USERS):
+            profile = CustomUser.objects.get(
+                username=f'user{user_num}').profile
+            profile.current_streak = user_num
+            profile.save()
+
+    def set_longest_streaks_manually(self):
+        for user_num in range(self.NUMBER_OF_USERS):
+            profile = CustomUser.objects.get(
+                username=f'user{user_num}').profile
+            profile.longest_streak = user_num
+            profile.save()
+
+    def setUp(self):
+
+        # create users
+        for user_id in range(self.NUMBER_OF_USERS):
+            user = CustomUser.objects.create_user(
+                username=f'user{user_id}', email=f'email{user_id}', password=f'password{user_id}')
+
+    def test_streak_increments_with_daily_mood_posts(self):
+        user_number = 3
+        number_of_days = 5
+
+        #  reset all streak data
+        for user in range(self.NUMBER_OF_USERS):
+            profile = CustomUser.objects.get(username=f'user{user}')
+            profile.current_streak = 0
+
+        token_response = self.log_in_user(user_number)
+        client = self.set_api_client_credentials(token_response)
+        today = now()
+        user = CustomUser.objects.get(username=f"user{user_number}")
+        for day in range(number_of_days, 0, -1):
+            n_days_ago = today - datetime.timedelta(days=day)
+            mood_text = f"mood on day {day}"
+            serializer = MoodSerializer(data={'mood': mood_text})
+            if serializer.is_valid():
+                serializer.save(user=user, date_created=n_days_ago)
+                user.refresh_from_db()
+            print('current streak : ', user.profile.current_streak)
+            self.assertEqual(user.profile.current_streak,
+                             number_of_days - day + 1)
+            # create_response = self.create_mood(client, mood_text)
+            # self.assertEqual{}
