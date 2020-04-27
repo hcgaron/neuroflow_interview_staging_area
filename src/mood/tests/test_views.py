@@ -145,12 +145,6 @@ class MoodTestClass(TestCase):
             self.assertAlmostEqual(
                 mood_response.data['longest_streak_percentile'], (user_num + 1) * .1)
 
-    def test_streak_does_not_increment_with_mood_post_on_same_day(self):
-        pass
-
-    def test_streak_resets_when_days_were_missed(self):
-        pass
-
 
 class StreakTestClass(TestCase):
     """
@@ -204,11 +198,6 @@ class StreakTestClass(TestCase):
         user_number = 3
         number_of_days = 5
 
-        #  reset all streak data
-        for user in range(self.NUMBER_OF_USERS):
-            profile = CustomUser.objects.get(username=f'user{user}')
-            profile.current_streak = 0
-
         token_response = self.log_in_user(user_number)
         client = self.set_api_client_credentials(token_response)
         today = now()
@@ -223,5 +212,44 @@ class StreakTestClass(TestCase):
             print('current streak : ', user.profile.current_streak)
             self.assertEqual(user.profile.current_streak,
                              number_of_days - day + 1)
-            # create_response = self.create_mood(client, mood_text)
-            # self.assertEqual{}
+
+    def test_streak_does_not_increment_with_multiple_moods_on_same_day(self):
+        user_number = 3
+        number_of_moods = 5
+
+        token_response = self.log_in_user(user_number)
+        client = self.set_api_client_credentials(token_response)
+        today = now()
+        user = CustomUser.objects.get(username=f"user{user_number}")
+        for mood_num in range(number_of_moods):
+            mood_text = f"mood number {mood_num}"
+            mood_response = client.post(reverse('moods'), {"mood": mood_text})
+            user.refresh_from_db()
+            print('current streak : ', user.profile.current_streak)
+            self.assertEqual(user.profile.current_streak, 1)
+
+    def test_streak_resets_when_days_were_missed(self):
+        user_number = 3
+        number_of_days = 15
+        missed_on_day = 6
+
+        token_response = self.log_in_user(user_number)
+        client = self.set_api_client_credentials(token_response)
+        today = now()
+        user = CustomUser.objects.get(username=f"user{user_number}")
+        for day in range(number_of_days):
+            if day == missed_on_day:
+                continue
+            n_days_ago = today - \
+                datetime.timedelta(days=(number_of_days - day))
+            mood_text = f"mood on day {day}"
+            serializer = MoodSerializer(data={'mood': mood_text})
+            if serializer.is_valid():
+                serializer.save(user=user, date_created=n_days_ago)
+                user.refresh_from_db()
+            print('current streak : ', user.profile.current_streak)
+            if day < missed_on_day:
+                self.assertEqual(user.profile.current_streak, day + 1)
+            if day >= missed_on_day:
+                self.assertEqual(user.profile.current_streak,
+                                 day - missed_on_day)
