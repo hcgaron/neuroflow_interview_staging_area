@@ -1,4 +1,3 @@
-import numpy as np
 from django.db.models import F, Func, IntegerField, Avg
 from django.db.models.aggregates import Aggregate
 from django.db.models.expressions import RawSQL
@@ -11,8 +10,6 @@ from mood.models import Mood
 from authentication.models import CustomUser, Profile
 from .serializers import MoodSerializer
 
-
-# testing only
 import datetime
 from django.utils.timezone import now
 
