@@ -118,8 +118,8 @@ class MoodTestClass(TestCase):
             token_response = self.log_in_user(user_num)
             client = self.set_api_client_credentials(token_response)
             mood_response = client.get(reverse('moods'))
-            print(f"user_num: {user_num} : ", mood_response.data.get(
-                'streak_percentile', None))
+            # print(f"user_num: {user_num} : ", mood_response.data.get(
+            #     'streak_percentile', None))
             if user_num >= self.NUMBER_OF_USERS / 2 - 1:
                 self.assertAlmostEqual(
                     mood_response.data['streak_percentile'], (user_num + 1) * .1)
@@ -209,7 +209,6 @@ class StreakTestClass(TestCase):
             if serializer.is_valid():
                 serializer.save(user=user, date_created=n_days_ago)
                 user.refresh_from_db()
-            print('current streak : ', user.profile.current_streak)
             self.assertEqual(user.profile.current_streak,
                              number_of_days - day + 1)
 
@@ -225,7 +224,6 @@ class StreakTestClass(TestCase):
             mood_text = f"mood number {mood_num}"
             mood_response = client.post(reverse('moods'), {"mood": mood_text})
             user.refresh_from_db()
-            print('current streak : ', user.profile.current_streak)
             self.assertEqual(user.profile.current_streak, 1)
 
     def test_streak_resets_when_days_were_missed(self):
@@ -235,21 +233,68 @@ class StreakTestClass(TestCase):
 
         token_response = self.log_in_user(user_number)
         client = self.set_api_client_credentials(token_response)
+
         today = now()
         user = CustomUser.objects.get(username=f"user{user_number}")
+
         for day in range(number_of_days):
             if day == missed_on_day:
                 continue
+
             n_days_ago = today - \
                 datetime.timedelta(days=(number_of_days - day))
+
             mood_text = f"mood on day {day}"
             serializer = MoodSerializer(data={'mood': mood_text})
+
             if serializer.is_valid():
                 serializer.save(user=user, date_created=n_days_ago)
                 user.refresh_from_db()
-            print('current streak : ', user.profile.current_streak)
             if day < missed_on_day:
                 self.assertEqual(user.profile.current_streak, day + 1)
+
             if day >= missed_on_day:
                 self.assertEqual(user.profile.current_streak,
                                  day - missed_on_day)
+
+    def test_longest_streak_increments_only_when_new_longest_streak_achieved(self):
+        user_number = 3
+        number_of_days = 200
+        missed_on_days = [6, 22, 99]
+
+        # log user in
+        token_response = self.log_in_user(user_number)
+        client = self.set_api_client_credentials(token_response)
+
+        # set up date & user
+        today = now()
+        user = CustomUser.objects.get(username=f"user{user_number}")
+
+        current_missed_day = 0
+        previous_missed_day = 0
+        num_missed_days = 0
+        for day in range(number_of_days):
+            if day in missed_on_days:
+                previous_missed_day = current_missed_day
+                current_missed_day = day
+                num_missed_days += 1
+                continue
+
+            n_days_ago = today - \
+                datetime.timedelta(days=(number_of_days - day))
+
+            mood_text = f"mood on day {day}"
+            serializer = MoodSerializer(data={'mood': mood_text})
+
+            if serializer.is_valid():
+                serializer.save(user=user, date_created=n_days_ago)
+                user.refresh_from_db()
+            if current_missed_day < missed_on_days[0]:
+                self.assertEqual(user.profile.longest_streak,
+                                 day - current_missed_day + 1)
+            elif current_missed_day < missed_on_days[1]:
+                self.assertEqual(user.profile.longest_streak, max(
+                    current_missed_day - previous_missed_day, day - current_missed_day))
+            else:
+                self.assertEqual(user.profile.longest_streak, max(
+                    current_missed_day - previous_missed_day - 1, day - current_missed_day))
