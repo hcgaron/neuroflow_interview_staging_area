@@ -298,3 +298,39 @@ class StreakTestClass(TestCase):
             else:
                 self.assertEqual(user.profile.longest_streak, max(
                     current_missed_day - previous_missed_day - 1, day - current_missed_day))
+
+    def test_longest_streak_persists_with_days_missed(self):
+        user_number = 3
+        number_of_days = 95
+        missed_on_days = [30, 44, 70]
+
+        # log user in
+        token_response = self.log_in_user(user_number)
+        client = self.set_api_client_credentials(token_response)
+
+        # set up date & user
+        today = now()
+        user = CustomUser.objects.get(username=f"user{user_number}")
+
+        current_missed_day = 0
+        previous_missed_day = 0
+        num_missed_days = 0
+
+        for day in range(number_of_days):
+            if day in missed_on_days:
+                previous_missed_day = current_missed_day
+                current_missed_day = day
+                num_missed_days += 1
+                continue
+
+            n_days_ago = today - \
+                datetime.timedelta(days=(number_of_days - day))
+
+            mood_text = f"mood on day {day}"
+            serializer = MoodSerializer(data={'mood': mood_text})
+
+            if serializer.is_valid():
+                serializer.save(user=user, date_created=n_days_ago)
+                user.refresh_from_db()
+
+        self.assertEqual(user.profile.longest_streak, 30)
