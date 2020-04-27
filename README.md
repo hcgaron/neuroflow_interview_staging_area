@@ -9,16 +9,16 @@ Also ensure that docker is running locally. On Linux, you can run `systemctl sta
 
 1. Clone this repository to you local machine
 2. Open your terminal and navigate to the project directory
-3. Run command `sudo docker-compose run web python src/manage.py migrate` to set up the database.
-4. Run command `sudo docker-compose run web python src/manage.py createsuperuser` to set up
+3. Run command **`sudo docker-compose run web python src/manage.py migrate`** to set up the database.
+4. Run command **`sudo docker-compose run web python src/manage.py createsuperuser`** to set up
    a super user profile for the web-browsable API.
-5. Run command `sudo docker-compose up` to start the service listening on port `8000`
+5. Run command **`sudo docker-compose up`** to start the service listening on port `8000`
 
 You are now up and running!
 
 ## Using the web browsable API.
 
-To check out the API open your browser to `http://localhost:8000/api/mood/` and log in with the super user account you created in step 4.
+To check out the API open your browser to **`http://localhost:8000/api/mood/`** and log in with the super user account you created in step 4.
 
 Try posting a few moods! These are `POST` requests to the `api/mood/` endpoint. Each mood you post will persist in the database and will return the mood object you just created with a few statistics about the logged in user.
 
@@ -32,7 +32,7 @@ This app is simple enough to run locally without docker:
 
 1. Clone this repository to your local machine
 2. Open your terminal and navigate to the project directory
-3. Make a virtual environment with [virtualenv](https://aaronlelevier.github.io/virtualenv-cheatsheet/) by running `python3 -m venv venv`
-4. Activate your virtual environment with `source venv/bin/activate`
-5. Run command `python src/manage.py migrate` to set up your database initially.
-6. Run command `python src/manage.py createsuperuser` to create a super user profile for the web browsable API.
+3. Make a virtual environment with [virtualenv](https://aaronlelevier.github.io/virtualenv-cheatsheet/) by running **`python3 -m venv venv`**
+4. Activate your virtual environment with **`source venv/bin/activate`**
+5. Run command **`python src/manage.py migrate`** to set up your database initially.
+6. Run command **`python src/manage.py createsuperuser`** to create a super user profile for the web browsable API.
