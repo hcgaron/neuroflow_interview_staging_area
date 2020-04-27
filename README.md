@@ -50,7 +50,7 @@ This app is simple enough to run locally without docker:
    - Go to line **100** and change **`'HOST': 'db'`** to **`'HOST': 127.0.0.1`**
 6. Run command **`python src/manage.py migrate`** to set up your database initially.
 7. Run command **`python src/manage.py createsuperuser`** to create a super user profile for the web browsable API.
-8. Run command ** `python src/manage.py runserver`**
+8. Run command **`python src/manage.py runserver`**
 
 You are now up and running for on localhost:8000!
 
