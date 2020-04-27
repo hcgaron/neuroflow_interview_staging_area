@@ -97,7 +97,7 @@ DATABASES = {
         'NAME': 'neuroflow_db_test',  # production is music_academy_db
         'USER': 'postgres',
         'PASSWORD': 'postgres',
-        'HOST': '127.0.0.1',  # changed host from 127.0.0.1 to dockerize
+        'HOST': 'db',  # changed host from 127.0.0.1 to dockerize
         'PORT': '5432'
     }
 }
