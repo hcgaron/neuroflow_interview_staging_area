@@ -78,7 +78,7 @@ Furthermore, I have currently allowed all CORS requests, but this wouldn't be su
 
 ### Percentile Consieration
 
-One interesting thing to note is that when calculating percentiles, Postgres offers a **PERCENT_RANK()** function. However, I instead decided to use the **CUME_DIST()** function which uses a [cumulative distribution function](https://en.wikipedia.org/wiki/Cumulative_distribution_function) to determine the relative standing of a data point. This has advantages and drawbacks. Advantage **PERCENT_RANK()** will decrease for datapoints that are tied (so if there are many data points tied for 1st place, their percentile will be roughly `1 / num_tied_data_points`). **CUME_DIST()** does not count this the same way, and gives a more appropriate ranking given the data we are using.
+One interesting thing to note is that when calculating percentiles, Postgres offers a **PERCENT_RANK()** function. However, I instead decided to use the **CUME_DIST()** function which uses a [cumulative distribution function](https://en.wikipedia.org/wiki/Cumulative_distribution_function) to determine the relative standing of a data point. This has advantages and drawbacks. Postgres **PERCENT_RANK()** will decrease for datapoints that are tied (so if there are many data points tied for 1st place, their percentile will be roughly `1 / num_tied_data_points`). **CUME_DIST()** does not count this the same way, and gives a more appropriate ranking given the data we are using.
 
 ##### Percentile drawback for LARGE data set
 
