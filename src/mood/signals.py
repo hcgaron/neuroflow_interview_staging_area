@@ -33,31 +33,22 @@ def update_streak(sender, instance, created, **kwargs):
             return
 
     # check if previous_mood was created yesterday
-    # today = datetime.date.today()
     today = instance.date_created.date()
-    # print("mood created : ", today)
-
     yesterday = today - datetime.timedelta(days=1)
-    # print('yesterday : ', yesterday)
 
     # multiple posts on same day don't extend streak
     if previous_mood.date_created.date() == today:
-        # print('previous mood was created today.  No streak incrementing')
         return
 
     elif previous_mood.date_created.date() == yesterday:
-        # print('previous mood was created yesterday.  incrementing current_streak')
         # update the streak in the users profile
         profile.current_streak = F('current_streak') + 1
         profile.save(update_fields=['current_streak'])
         profile.refresh_from_db()
-        # print('current streak after save and refresh  : ', profile.current_streak)
-        # print('longest_streak before conditional : ', profile.longest_streak)
         if profile.current_streak > profile.longest_streak:
             profile.longest_streak = profile.current_streak
             profile.save()
             profile.refresh_from_db()
-            # print('longest streak after conditional : ', profile.longest_streak)
         return
 
     # streak is 1 if wasn't a post yesterday

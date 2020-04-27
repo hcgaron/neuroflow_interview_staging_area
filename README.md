@@ -67,7 +67,11 @@ I would also make use of **environment variables** rather than having things har
 
 Right now, the app is running on a **development server** which is **NOT** suitable for production. I would imaging we would use something like **Apache2** to serve this app. If using Apache2, I would use the src/neuroflow_rest_api/wsgi.py file to load environment variables from a script when the app is loaded.
 
+#### Security
+
 I would also change the JWT access token expiration time to a short value (5 - 20 mins) for security purposes, but allow refresh tokens to live as long as deemed safe to do so by project requirements.
+
+Furthermore, I have currently allowed all CORS requests, but this wouldn't be suitbale for production. I would change the CORS_ORIGIN_WHITELIST to only allow from authorized addresses.
 
 ### Percentile Consieration
 
