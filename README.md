@@ -76,7 +76,7 @@ I would also change the JWT access token expiration time to a short value (5 - 2
 
 Furthermore, I have currently allowed all CORS requests, but this wouldn't be suitbale for production. I would change the CORS_ORIGIN_WHITELIST to only allow from authorized addresses.
 
-### Percentile Consieration
+### Percentile Consideration
 
 One interesting thing to note is that when calculating percentiles, Postgres offers a **PERCENT_RANK()** function. However, I instead decided to use the **CUME_DIST()** function which uses a [cumulative distribution function](https://en.wikipedia.org/wiki/Cumulative_distribution_function) to determine the relative standing of a data point. This has advantages and drawbacks. Postgres **PERCENT_RANK()** will decrease for datapoints that are tied (so if there are many data points tied for 1st place, their percentile will be roughly `1 / num_tied_data_points`). **CUME_DIST()** does not count this the same way, and gives a more appropriate ranking given the data we are using.
 
